@@ -2,6 +2,7 @@ import sys
 import os
 import csv
 import copy
+import random
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,6 +18,9 @@ pychop.backend("torch")
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
+EXPERIMENT_SEED = 2026
+DATASET_SPLIT_SEED = EXPERIMENT_SEED
 
 def fuse_resnet(model):
     """
@@ -61,8 +65,14 @@ def fuse_resnet(model):
 
     return model
 
-torch.manual_seed(42)
-np.random.seed(42)
+torch.manual_seed(EXPERIMENT_SEED)
+np.random.seed(EXPERIMENT_SEED)
+random.seed(EXPERIMENT_SEED)
+
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(EXPERIMENT_SEED)
+    torch.cuda.manual_seed_all(EXPERIMENT_SEED)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RESULTS_FILE = "quantization_results.csv"
 
@@ -80,7 +90,7 @@ class ResNet(nn.Module):
     def forward(self, x): return self.backbone(x)
 
 
-def load_data(dataset_name):
+def load_data(dataset_name, caltech_split_seed=DATASET_SPLIT_SEED):
     print(f"Loading {dataset_name}...")
     if dataset_name == "MNIST":
         t = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
@@ -96,7 +106,7 @@ def load_data(dataset_name):
             transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         ])
         full = torchvision.datasets.Caltech101(root='./data', download=True)
-        generator = torch.Generator().manual_seed(42)
+        generator = torch.Generator().manual_seed(caltech_split_seed)
         train_size = int(0.7 * len(full))
         val_size = int(0.15 * len(full))
         test_size = len(full) - train_size - val_size
@@ -114,6 +124,33 @@ def load_data(dataset_name):
     
     # num_workers=0 to ensure safety in simple scripts
     return DataLoader(d, batch_size=64, shuffle=False, num_workers=0), classes, ch
+
+
+def load_visualization_data(dataset_name):
+    """Use the same split as evaluation and the QAT scripts."""
+    return load_data(dataset_name, caltech_split_seed=DATASET_SPLIT_SEED)
+
+
+def collect_first_20_samples(model, dataloader):
+    model.eval()
+    images, predictions, ground_truth, pred_probs = [], [], [], []
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            logits = model(inputs)
+            probs = torch.softmax(logits, dim=1)
+            max_probs, predicted = torch.max(probs, 1)
+
+            for i in range(inputs.size(0)):
+                images.append(inputs[i].cpu().float().numpy())
+                predictions.append(predicted[i].cpu().item())
+                ground_truth.append(labels[i].cpu().item())
+                pred_probs.append(max_probs[i].cpu().item())
+                if len(images) >= 20:
+                    return images, predictions, ground_truth, pred_probs
+
+    return images, predictions, ground_truth, pred_probs
 
 
 # --- Numerical Error Analysis Metrics ---
@@ -169,8 +206,8 @@ def visualize_images(images, predictions, ground_truth, pred_probs, dataset_name
                 ax.imshow(img)
                 
             color = 'green' if predictions[i] == ground_truth[i] else 'red'
-            ax.set_title(f"P:{predictions[i]} ({pred_probs[i]:.2f})\nT:{ground_truth[i]}", 
-                         color=color, fontsize=8)
+            ax.set_title(f"Pred:{predictions[i]} (Prob:{np.round(pred_probs[i],2):.2f}) \nTrue:{ground_truth[i]}",
+                         color=color, fontsize=8, pad=2)
             ax.axis('off')
         else:
             ax.axis('off') # Hide unused subplots
@@ -204,6 +241,7 @@ def run_experiment_and_save():
     for dataset in datasets:
         print(f"\n--- Processing {dataset} ---")
         testloader, num_classes, in_ch = load_data(dataset)
+        visloader, _, _ = load_visualization_data(dataset)
         
         # 1. Prepare Clean Model
         clean_model = ResNet(in_ch, num_classes)
@@ -245,10 +283,6 @@ def run_experiment_and_save():
                 sum_signal_pow = 0.0
                 sum_noise_pow = 0.0
                 
-                # Lists for visualization (Small subset only)
-                vis_predictions, vis_ground_truth, vis_images, vis_pred_probs = [], [], [], []
-                collected_vis = False
-                
                 with torch.no_grad():
                     with PdfPages(pdf_filename) as pdf: # Open PDF here
                         for inputs, labels in testloader:
@@ -270,14 +304,6 @@ def run_experiment_and_save():
                             sum_signal_pow += torch.sum(logits_c ** 2).item()
                             sum_noise_pow += torch.sum(noise ** 2).item()
                             
-                            # Collect Data for Visualization (First Batch Only)
-                            if not collected_vis:
-                                vis_predictions.extend(predicted.cpu().numpy())
-                                vis_ground_truth.extend(labels.cpu().numpy())
-                                vis_images.extend(inputs.cpu().float().numpy())
-                                vis_pred_probs.extend(max_probs.cpu().numpy())
-                                collected_vis = True
-                        
                         # End of dataset loop
                         accuracy = 100 * correct / total
                         
@@ -290,6 +316,7 @@ def run_experiment_and_save():
                         print(f" Acc: {accuracy:.2f}%, Logit SQNR: {act_sqnr:.2f}dB")
                         
                         # Create Visualization Page
+                        vis_images, vis_predictions, vis_ground_truth, vis_pred_probs = collect_first_20_samples(model_q, visloader)
                         visualize_images(vis_images, vis_predictions, vis_ground_truth, vis_pred_probs, dataset, pdf)
                 
                 # 5. Save Results

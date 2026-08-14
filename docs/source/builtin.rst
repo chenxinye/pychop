@@ -4,15 +4,26 @@
 Built-in low-precision types
 =================================
 
-``Pychop`` ships three ready-made classes that automatically **chop to the
-desired format after every arithmetic operation**:
+``Pychop`` ships four ready-made classes that automatically **chop to the
+desired format after each public operation boundary**:
 
 * :class:`pychop.builtin.CPFloat` – scalar (Python ``float``-like)
-* :class:`pychop.builtin.CPTensor` – :class:`torch.Tensor` subclass
 * :class:`pychop.builtin.CPArray`  – :class:`numpy.ndarray` subclass
+* :class:`pychop.builtin.CPJaxArray` – JAX array wrapper
+* :class:`pychop.builtin.CPTensor` – :class:`torch.Tensor` subclass
 
-All three work with any ``Chop`` (or ``FaultChop``) instance and keep the
-result **inside the low-precision type**.
+All four work with any ``Chop`` (or ``FaultChop``) instance and keep the
+result **inside the low-precision type** when the wrapped operation returns a
+floating-point or complex value. Integer and Boolean outputs, such as pivot
+indices and comparison masks, are left as ordinary backend values.
+
+.. note::
+
+   The built-in types chop after Python/NumPy/PyTorch/JAX operation calls. They
+   do not chop every internal multiply/add inside fused BLAS, LAPACK, XLA, or
+   PyTorch kernels. For strict per-arithmetic-step simulation, write the
+   algorithm steps explicitly with the built-in types or use a specialized
+   chopped kernel.
 
 
 Quick import
@@ -20,10 +31,11 @@ Quick import
 
 .. code-block:: python
 
+   import pychop
    from pychop import Chop
-   from pychop.builtin import CPFloat, CPTensor, CPArray
+   from pychop.builtin import CPFloat, CPArray, CPJaxArray, CPTensor, cast_precision
 
-   pychop.backend('torch') # if using NumPy or JAX, switch to them correspondingly before the deployment
+   pychop.backend('torch') # use 'numpy', 'jax', or 'torch' for the matching container
 
 Common set-up
 =============
@@ -48,6 +60,7 @@ Scalar – :class:`CPFloat`
 **Example**
 
 .. code-block:: python
+
    half = Chop(exp_bits=5, sig_bits=10, subnormal=True, rmode=1)
    ufhalf = Chop(exp_bits=5, sig_bits=10, subnormal=False, rmode=1)
    
@@ -146,8 +159,8 @@ NumPy – :class:`CPArray`
 
 
 
-NumPy – :class:`CPJaxArray`
-========================
+JAX – :class:`CPJaxArray`
+=========================
 
 .. autoclass:: pychop.builtin.CPJaxArray
    :members:
@@ -191,7 +204,7 @@ Under-flow-free (UF) formats
 ============================
 
 Just create a ``Chop`` with ``subnormal=False`` and pass it to any of the
-three types:
+four types:
 
 .. code-block:: python
 
@@ -207,26 +220,44 @@ three types:
 Supported operations
 ====================
 
-All Python arithmetic operators (``+ – * / // % **``) and the usual
-library functions are dispatched through the subclass machinery:
+All Python arithmetic operators (``+ – * / // % **``) and many library
+functions are dispatched through the wrapper/subclass machinery:
 
 * **NumPy** – any ufunc (``np.sin``, ``np.exp``, ``np.linalg.norm`` …)
+* **JAX** – operators implemented by :class:`CPJaxArray`; use
+  :mod:`pychop.builtin.linalg` or ``chopwrap`` for wrapped high-level JAX
+  outputs
 * **PyTorch** – any ``torch.*`` function (``torch.nn.functional.relu``,
   ``torch.matmul``, ``torch.conv2d`` …)
 
-The result is **always** chopped and returned as the same built-in type.
+Floating-point and complex results are chopped and returned as the matching
+built-in type. Non-floating outputs are returned as ordinary backend values.
 
 .. note::
 
-   Reductions (``sum``, ``mean``, ``norm``) return a **scalar** of the same
-   type when the input is a ``CPArray``/``CPTensor``.  If you need a plain
-   Python number, call ``.item()`` or ``float(...)``.
+   Scalar-returning wrappers in :mod:`pychop.builtin.linalg` return
+   :class:`CPFloat` where scalar chaining is useful. Backend-native reductions
+   may return backend scalars or arrays depending on the library.
+
+
+Switching precision
+===================
+
+Use :func:`pychop.builtin.cast_precision` to switch a value to a new ``Chop``
+configuration. Casting chops immediately and preserves the container family.
+
+.. autofunction:: pychop.builtin.cast_precision
+
+.. code-block:: python
+
+   fp8 = Chop(exp_bits=4, sig_bits=3, subnormal=True, rmode=1)
+   x_fp8 = cast_precision(x, fp8)
 
 
 Pickling / serialization
 ========================
 
-All three classes implement ``__reduce_ex__`` and can be pickled/unpickled
+The NumPy and PyTorch built-in containers implement ``__reduce_ex__`` and can be pickled/unpickled
 with the usual ``pickle`` module.
 
 .. code-block:: python
@@ -246,9 +277,10 @@ Performance tip
 * Use the **PyTorch** backend (``pychop.backend('torch')``) for GPU-accelerated
   chopping.
 * Use the **TensorFlow** backend (``pychop.backend('tensorflow')``) for TensorFlow/Keras
-  workflows with STE-based gradient support.
+  workflows with STE-based gradient support. TensorFlow does not currently have
+  a built-in ``CP*`` wrapper type.
 * Use the **NumPy** backend (default) for pure-CPU workloads.
 
-That’s it, simply drop the three imports into your code and you instantly get
-**type-preserving low-precision arithmetic** for scalars, NumPy arrays and
-PyTorch tensors!
+That’s it, simply drop the imports into your code and you get
+**type-preserving low-precision arithmetic** for scalars, NumPy arrays, JAX
+arrays, and PyTorch tensors.

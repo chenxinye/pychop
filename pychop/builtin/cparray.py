@@ -193,6 +193,10 @@ class CPArray(np.ndarray):
         """Return as a regular NumPy ndarray (drops CPArray subclass)."""
         return np.asarray(self)
 
+    def astype_precision(self, chopper):
+        """Cast this array to another chopped precision immediately."""
+        return CPArray(np.asarray(self), chopper)
+
     def __str__(self):
         # Avoid triggering __array_function__ during formatting by converting
         # to base ndarray explicitly.

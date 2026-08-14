@@ -122,7 +122,7 @@ class CPFloat:
         """
         b = pychop.get_backend()
 
-        if b == "numpy":
+        if b in ("numpy", "auto"):
             return self.chopper(np.asarray(val)).item()
 
         if b == "torch":
@@ -264,6 +264,14 @@ class CPFloat:
             The stored chopped scalar.
         """
         return self.value
+
+    def astype_precision(self, chopper: Any) -> "CPFloat":
+        """
+        Cast this scalar to another chopped precision.
+
+        The returned scalar is chopped immediately with ``chopper``.
+        """
+        return CPFloat(self.value, chopper)
 
     def to_numpy(self, dtype=None) -> np.ndarray:
         """

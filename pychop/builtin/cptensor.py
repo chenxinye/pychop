@@ -58,7 +58,8 @@ class CPTensor(torch.Tensor):
             return {k: CPTensor._wrap_tree(v, chopper) for k, v in x.items()}
 
         if isinstance(x, torch.Tensor):
-            # Only chop numeric tensors; bool/int/float/complex are all fine for Chop
+            if not (torch.is_floating_point(x) or torch.is_complex(x)):
+                return x
             chopped = chopper(x)
             out = torch.Tensor._make_subclass(CPTensor, chopped, require_grad=chopped.requires_grad)
             out.chopper = chopper
@@ -128,6 +129,10 @@ class CPTensor(torch.Tensor):
     def to_regular(self):
         """Return a base torch.Tensor view (drops CPTensor subclass)."""
         return self.as_subclass(torch.Tensor)
+
+    def astype_precision(self, chopper):
+        """Cast this tensor to another chopped precision immediately."""
+        return CPTensor(self.to_regular(), chopper)
 
     def __str__(self):
         base_str = self.to_regular().__str__()

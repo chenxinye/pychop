@@ -185,6 +185,10 @@ class CPJaxArray:
         """View as a plain jax.Array."""
         return self._data
 
+    def astype_precision(self, chopper):
+        """Cast this array to another chopped precision immediately."""
+        return CPJaxArray(self._data, chopper)
+
     # ── Printing ────────────────────────────────────────────────────
     def __str__(self):
         prec_info = (

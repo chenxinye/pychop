@@ -2,6 +2,13 @@
 
 from .cpfloat import *
 from .cparray import *
-from .cparray_jax import *
-from .cptensor import *
+try:
+    from .cparray_jax import *
+except ImportError:
+    pass
+try:
+    from .cptensor import *
+except ImportError:
+    pass
+from .cast import *
 from . import linalg

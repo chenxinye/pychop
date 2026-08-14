@@ -13,12 +13,39 @@ import pychop
 
 from .dispatch import ChopWrapSpec, chopwrap_call
 
+_CPArrayType = None
+_CPJaxArrayType = None
+_CPTensorType = None
+
+
+def _builtin_types():
+    global _CPArrayType, _CPJaxArrayType, _CPTensorType
+    if _CPArrayType is None:
+        from .cparray import CPArray
+        _CPArrayType = CPArray
+    if _CPJaxArrayType is None:
+        try:
+            from .cparray_jax import CPJaxArray
+            _CPJaxArrayType = CPJaxArray
+        except ImportError:
+            pass
+    if _CPTensorType is None:
+        try:
+            from .cptensor import CPTensor
+            _CPTensorType = CPTensor
+        except ImportError:
+            pass
+    return _CPArrayType, _CPJaxArrayType, _CPTensorType
+
+
 def _infer_backend_from_obj(x: object) -> Optional[str]:
-    if isinstance(x, CPArray):
+    CPArray, CPJaxArray, CPTensor = _builtin_types()
+
+    if CPArray is not None and isinstance(x, CPArray):
         return "numpy"
-    if isinstance(x, CPJaxArray):
+    if CPJaxArray is not None and isinstance(x, CPJaxArray):
         return "jax"
-    if isinstance(x, CPTensor):
+    if CPTensor is not None and isinstance(x, CPTensor):
         return "torch"
     return None
 
@@ -50,29 +77,7 @@ def _ensure_backend_for_obj(x) -> str:
     if b != "auto":
         return b
 
-    # Import types lazily to avoid circular imports at module import time
-    try:
-        from .cparray import CPArray
-    except Exception:
-        CPArray = None  # type: ignore
-
-    try:
-        from .cparray_jax import CPJaxArray
-    except Exception:
-        CPJaxArray = None  # type: ignore
-
-    try:
-        from .cptensor import CPTensor
-    except Exception:
-        CPTensor = None  # type: ignore
-
     inferred = _infer_backend_from_obj(x)
-    if CPArray is not None and isinstance(x, CPArray):
-        inferred = "numpy"
-    elif CPJaxArray is not None and isinstance(x, CPJaxArray):
-        inferred = "jax"
-    elif CPTensor is not None and isinstance(x, CPTensor):
-        inferred = "torch"
 
     if inferred is None:
         raise ValueError(
@@ -135,7 +140,7 @@ def _torch_specs():
     def unwrap(x): return x.to_regular()
 
     def wrap(y, chopper):
-        if isinstance(y, torch.Tensor):
+        if isinstance(y, torch.Tensor) and (torch.is_floating_point(y) or torch.is_complex(y)):
             return CPTensor(y, chopper)
         return y
 

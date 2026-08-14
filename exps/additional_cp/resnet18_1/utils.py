@@ -12,7 +12,7 @@ from torchvision.models import resnet18, ResNet18_Weights
 from pychop import ChopSTE
 from pychop import Chop
 
-SEED = 42
+SEED = 2026
 
 
 def seed_everything(seed=SEED):

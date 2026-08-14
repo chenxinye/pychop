@@ -79,6 +79,7 @@ class Chop:
         t = sig_bits + 1
         self.u = 2 ** (1 - t) / 2
         self._impl = None
+        self._impl_backend = None
 
         self.exp_bits = exp_bits
         self.sig_bits = sig_bits
@@ -92,26 +93,7 @@ class Chop:
         self.verbose = verbose
 
         if backend != "auto":
-            if backend == "torch":
-                from .tch.lightchop import LightChop_ as _LightChopImpl
-            elif backend == "jax":
-                from .jx.lightchop import LightChop_ as _LightChopImpl
-            elif backend == "tensorflow":
-                from .tf.lightchop import LightChop_ as _LightChopImpl
-            elif backend == "numpy":
-                from .np.lightchop import LightChop_ as _LightChopImpl
-
-            self._impl = _LightChopImpl(
-                exp_bits,
-                sig_bits,
-                rmode,
-                subnormal,
-                chunk_size,
-                random_state,
-            )
-
-            # also attach to impl (optional but usually convenient)
-            self._impl.u = self.u
+            self._get_impl(backend)
 
         if self.verbose:
             import numpy as np
@@ -121,8 +103,33 @@ class Chop:
             )
 
 
+    def _get_impl(self, backend):
+        if backend == "torch":
+            from .tch.lightchop import LightChop_ as _LightChopImpl
+        elif backend == "jax":
+            from .jx.lightchop import LightChop_ as _LightChopImpl
+        elif backend == "tensorflow":
+            from .tf.lightchop import LightChop_ as _LightChopImpl
+        elif backend == "numpy":
+            from .np.lightchop import LightChop_ as _LightChopImpl
+        else:
+            raise ValueError(f"Unsupported backend: {backend!r}")
+
+        self._impl = _LightChopImpl(
+            self.exp_bits,
+            self.sig_bits,
+            self.rmode,
+            self.subnormal,
+            self.chunk_size,
+            self.random_state,
+        )
+        self._impl.u = self.u
+        self._impl_backend = backend
+
+
     def __call__(self, X):
-        if os.environ['chop_backend'] == 'auto':
+        backend_env = os.environ.get('chop_backend', 'auto')
+        if backend_env == 'auto':
             # sanity check for supported array types
             backend =  detect_array_type(X, verbose=self.verbose)  
             self._impl = None 
@@ -150,7 +157,14 @@ class Chop:
                 self.chunk_size,
                 self.random_state,
             )
-            
+            self._impl.u = self.u
+            self._impl_backend = backend
+        elif self._impl is None or self._impl_backend != backend_env:
+            self._get_impl(backend_env)
+
+        if self._impl is None:
+            raise RuntimeError("Chop backend implementation was not initialized.")
+
         return self._impl(X)
 
 

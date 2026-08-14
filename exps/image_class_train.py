@@ -10,13 +10,16 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision.models import resnet50, ResNet50_Weights
 import random
 
-torch.manual_seed(42)
-np.random.seed(42)
-random.seed(42)
+EXPERIMENT_SEED = 2026
+DATASET_SPLIT_SEED = EXPERIMENT_SEED
+
+torch.manual_seed(EXPERIMENT_SEED)
+np.random.seed(EXPERIMENT_SEED)
+random.seed(EXPERIMENT_SEED)
 
 if torch.cuda.is_available():
-    torch.cuda.manual_seed(42)
-    torch.cuda.manual_seed_all(42)  
+    torch.cuda.manual_seed(EXPERIMENT_SEED)
+    torch.cuda.manual_seed_all(EXPERIMENT_SEED)
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -25,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Cutout(object):
     def __init__(self, n_holes, length):
-        torch.manual_seed(42)
+        torch.manual_seed(EXPERIMENT_SEED)
         self.n_holes = n_holes
         self.length = length
 
@@ -122,7 +125,7 @@ def load_data(dataset_name):
         train_size = int(0.7 * len(full_dataset))
         val_size = int(0.15 * len(full_dataset))
         test_size = len(full_dataset) - train_size - val_size
-        generator = torch.Generator().manual_seed(42)
+        generator = torch.Generator().manual_seed(DATASET_SPLIT_SEED)
         trainset, valset, testset = torch.utils.data.random_split(full_dataset, [train_size, val_size, test_size], generator=generator)
         trainset.dataset.transform = transform_train
         valset.dataset.transform = transform_test
@@ -167,7 +170,7 @@ def load_data(dataset_name):
 class ResNet(nn.Module):
     def __init__(self, input_channels, num_classes):
         super(ResNet, self).__init__()
-        torch.manual_seed(42)
+        torch.manual_seed(EXPERIMENT_SEED)
         self.backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         if input_channels == 1:
             self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)

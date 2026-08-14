@@ -256,7 +256,7 @@ def run_and_save_results(dataset, float_type_dict, rounding_modes, epochs_dict):
 
             # Visualization
             vis_images, vis_preds, vis_gt, vis_probs = collect_first_20_samples(model, testloader)
-            pdf_filename = f"qat_class_images/{dataset}_{key}_{rd}_visualizationsChop"
+            pdf_filename = f"qat_class_images/quant_{dataset}_{key}_{rd}_visualizations.jpg"
             with PdfPages(pdf_filename) as pdf:
                 visualize_images(vis_images, vis_preds, vis_gt, vis_probs,
                                  dataset_name=f"{dataset}_{key}_{rd}", pdf=pdf)

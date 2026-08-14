@@ -5,15 +5,26 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from matplotlib.backends.backend_pdf import PdfPages
 from torchvision.models import resnet50, ResNet50_Weights
 
-torch.manual_seed(42)
+EXPERIMENT_SEED = 2026
+DATASET_SPLIT_SEED = EXPERIMENT_SEED
+
+torch.manual_seed(EXPERIMENT_SEED)
+np.random.seed(EXPERIMENT_SEED)
+random.seed(EXPERIMENT_SEED)
+
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(EXPERIMENT_SEED)
+    torch.cuda.manual_seed_all(EXPERIMENT_SEED)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Cutout(object):
     def __init__(self, n_holes, length):
-        torch.manual_seed(42)
+        torch.manual_seed(EXPERIMENT_SEED)
         self.n_holes = n_holes
         self.length = length
 
@@ -32,7 +43,7 @@ class Cutout(object):
         img = img * mask.to(img.device)
         return img
 
-def load_data(dataset_name):
+def load_data(dataset_name, caltech_split_seed=DATASET_SPLIT_SEED):
     if dataset_name == "MNIST":
         transform_test = transforms.Compose([
             transforms.ToTensor(),
@@ -61,7 +72,7 @@ def load_data(dataset_name):
         train_size = int(0.7 * len(full_dataset))
         val_size = int(0.15 * len(full_dataset))
         test_size = len(full_dataset) - train_size - val_size
-        generator = torch.Generator().manual_seed(42)
+        generator = torch.Generator().manual_seed(caltech_split_seed)
         _, _, testset = torch.utils.data.random_split(full_dataset, [train_size, val_size, test_size], generator=generator)
         testset.dataset.transform = transform_test
         num_classes = 102
@@ -83,10 +94,15 @@ def load_data(dataset_name):
     testloader = DataLoader(testset, batch_size=64, shuffle=False, num_workers=2)
     return testloader, num_classes, input_channels
 
+
+def load_visualization_data(dataset_name):
+    """Use the same split as evaluation and the QAT scripts."""
+    return load_data(dataset_name, caltech_split_seed=DATASET_SPLIT_SEED)
+
 class ResNet(nn.Module):
     def __init__(self, input_channels, num_classes):
         super(ResNet, self).__init__()
-        torch.manual_seed(42)
+        torch.manual_seed(EXPERIMENT_SEED)
         self.backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         if input_channels == 1:
             self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -114,7 +130,29 @@ def inference(model, testloader):
     accuracy = 100 * correct / total
     return accuracy, predictions, ground_truth, images
 
-def visualize_images(images, predictions, ground_truth, dataset_name, pdf):
+
+def collect_first_20_samples(model, testloader):
+    model.eval()
+    images, predictions, ground_truth, pred_probs = [], [], [], []
+
+    with torch.no_grad():
+        for inputs, labels in testloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            probabilities = torch.softmax(outputs, dim=1)
+            max_probs, predicted = torch.max(probabilities, 1)
+
+            for i in range(inputs.size(0)):
+                images.append(inputs[i].cpu().float().numpy())
+                predictions.append(predicted[i].cpu().item())
+                ground_truth.append(labels[i].cpu().item())
+                pred_probs.append(max_probs[i].cpu().item())
+                if len(images) >= 20:
+                    return images, predictions, ground_truth, pred_probs
+
+    return images, predictions, ground_truth, pred_probs
+
+def visualize_images(images, predictions, ground_truth, pred_probs, dataset_name, pdf):
     fig, axes = plt.subplots(2, 10, figsize=(12, 2.5))
     for i, ax in enumerate(axes.flat):
         if i < len(images):
@@ -126,8 +164,8 @@ def visualize_images(images, predictions, ground_truth, dataset_name, pdf):
                 img = (img - img.min()) / (img.max() - img.min())
                 ax.imshow(img)
             color = 'green' if predictions[i] == ground_truth[i] else 'red'
-            ax.set_title(f"Pred:{predictions[i]}, True:{ground_truth[i]}", 
-                        color=color, fontsize=6, pad=2)
+            ax.set_title(f"Pred:{predictions[i]} (Prob:{np.round(pred_probs[i],2):.2f}) \nTrue:{ground_truth[i]}",
+                         color=color, fontsize=8, pad=2)
             ax.axis('off')
     plt.suptitle(f"Image Predictions ({dataset_name})", y=1.02, fontsize=10)
     plt.tight_layout(pad=0.3)
@@ -152,6 +190,8 @@ for dataset in datasets:
     with PdfPages(pdf_filename) as pdf:
         acc, preds, gt, images = inference(model, testloader)
         print(f"{dataset} Accuracy: {acc:.2f}%")
-        # visualize_images(images, preds, gt, f"{dataset} FP32", pdf)
+        visloader, _, _ = load_visualization_data(dataset)
+        vis_images, vis_preds, vis_gt, vis_probs = collect_first_20_samples(model, visloader)
+        visualize_images(vis_images, vis_preds, vis_gt, vis_probs, f"{dataset} FP32", pdf)
     
     # print(f"Visualizations saved to {pdf_filename}")
