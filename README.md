@@ -332,14 +332,16 @@ expressed are those of the authors only and do not necessarily reflect those of 
 If you use ``Pychop`` in your research or simulations, cite:
 
 ```bibtex
-@misc{carson2025,
-      title={Pychop: Emulating Low-Precision Arithmetic in Numerical Methods and Neural Networks}, 
-      author={Erin Carson and Xinye Chen},
-      year={2025},
-      eprint={2504.07835},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2504.07835}, 
+@article{carson2025pychop,
+  title   = {{PyChop}: Emulating Low-Precision Arithmetic in Numerical Methods and Neural Networks},
+  author  = {Carson, Erin and Chen, Xinye},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2025},
+  note    = {Accepted for publication},
+  eprint  = {2504.07835},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url     = {https://arxiv.org/abs/2504.07835}
 }
 ```
 
