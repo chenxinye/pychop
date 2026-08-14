@@ -333,7 +333,7 @@ If you use ``Pychop`` in your research or simulations, cite:
 
 ```bibtex
 @article{carson2025pychop,
-  title   = {{PyChop}: Emulating Low-Precision Arithmetic in Numerical Methods and Neural Networks},
+  title   = {{pychop}: Emulating Low-Precision Arithmetic in Numerical Methods and Neural Networks},
   author  = {Carson, Erin and Chen, Xinye},
   journal = {ACM Transactions on Mathematical Software},
   year    = {2025},
