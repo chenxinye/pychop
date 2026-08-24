@@ -1,25 +1,25 @@
 Welcome to pychop's documentation!
 ==================================
 
-Using low precision can achieve extra speedup while reducing storage and energy costs. The intention of ``Pychop``, motivated by the software ``chop`` in Matlab developed by Nick Higham, is to simulate the low precision formats based on single and double precisions, which are prevalent on modern machines. ``Pychop`` is a Python package for simulating low precision and quantization in modern machines. It supports NumPy, Torch, JAX, or TensorFlow backend.
+Using low precision can achieve extra speedup while reducing storage and energy costs. The intention of ``pychop``, motivated by the software ``chop`` in Matlab developed by Nick Higham, is to simulate the low precision formats based on single and double precisions, which are prevalent on modern machines. ``pychop`` is a Python package for simulating low precision and quantization in modern machines. It supports NumPy, Torch, JAX, or TensorFlow backend.
 
 
 
 
-``Pychop`` mainly contains three modules for quantization simulation:
+``pychop`` mainly contains three modules for quantization simulation:
 
 * ``Chop:`` for low precision floating point simulation
 * ``Chopi``: for integer quantization
 * ``Chopf``: for fixed point quantization
 
 .. image:: ../imgs/pychop_logo.png
-   :alt: Pychop Log
+   :alt: pychop Log
    :width: 600px
 
 Features
 --------------------
 
-The ``Pychop`` class offers several key advantages that make it a powerful tool for developers, researchers, and engineers working with numerical computations:
+The ``pychop`` class offers several key advantages that make it a powerful tool for developers, researchers, and engineers working with numerical computations:
 
 * Customizable Precision
  
@@ -40,12 +40,12 @@ The optional support_denormals parameter enables handling of subnormal numbers, 
 
 * GPU Acceleration
 
-Leveraging PyTorch's tensor operations and device support (device parameter), ``Pychop`` can run efficiently on GPUs. This allows for fast, vectorized processing of large datasets, making it suitable for large-scale experiments in machine learning and numerical optimization.
+Leveraging PyTorch's tensor operations and device support (device parameter), ``pychop`` can run efficiently on GPUs. This allows for fast, vectorized processing of large datasets, making it suitable for large-scale experiments in machine learning and numerical optimization.
 
 * Reproducible Stochastic Rounding
 
 The seed parameter ensures reproducibility in stochastic rounding modes, critical for debugging and comparing results across runs. This is a significant advantage in research settings where consistent outcomes are needed to validate hypotheses.
-To ensure consistency with MATLAB's chop software, ``Pychop`` closely follows its API. For the first four rounding modes, it produces identical results given the same user-defined parameters. For stochastic rounding modes (rmode 5 and 6), both tools yield the same output when provided with identical random numbers.
+To ensure consistency with MATLAB's chop software, ``pychop`` closely follows its API. For the first four rounding modes, it produces identical results given the same user-defined parameters. For stochastic rounding modes (rmode 5 and 6), both tools yield the same output when provided with identical random numbers.
 
 * Ease of Integration
 
@@ -53,14 +53,14 @@ Built on PyTorch, the class integrates seamlessly with existing PyTorch workflow
 
 
 .. image:: ../imgs/pychop_app.png
-   :alt: Pychop Applications
+   :alt: pychop Applications
    :width: 720px
 
 
 
 Installation guide
 --------------------
-``Pychop`` has the following dependencies for its functionality:
+``pychop`` has the following dependencies for its functionality:
 
    * numpy>=1.21
    * pandas>=2.0
