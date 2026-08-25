@@ -3,7 +3,7 @@
 
 # pychop: efficient reduced-precision quantization library 
 
-[![All platforms](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/pychop-feedstock?branchName=main)]([https://anaconda.org/conda-forge/pychop](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=26671&branchName=main))
+[![All platforms](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/pychop-feedstock?branchName=main)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=26671&branchName=main)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pychop/badges/license.svg)](https://anaconda.org/conda-forge/pychop)
 [![Codecov](https://github.com/inEXASCALE/pychop/actions/workflows/codecov.yml/badge.svg)](https://github.com/inEXASCALE/pychop/actions/workflows/codecov.yml) [![!pypi](https://img.shields.io/pypi/v/pychop?color=greem)](https://pypi.org/project/pychop/) [![Conda Version](https://img.shields.io/conda/vn/conda-forge/pychop.svg)](https://anaconda.org/conda-forge/pychop)
 [![Download Status](https://static.pepy.tech/badge/pychop)](https://pypi.python.org/pypi/pychop/)
@@ -12,26 +12,26 @@
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/pychop.svg)](https://anaconda.org/conda-forge/pychop)
 </div>
       
-Lower-precision floating-point arithmetic is becoming more often used in recently growing hardware, moving beyond the usual IEEE 64-bit double-precision and 32-bit single-precision formats. Today, hardware accelerators and software simulations often, in one or other ways, use reduced-precision formats, such as 16-bit half-precision (e.g., brain floating point), which are widely used in scientific computing and deep learning applications. These formats, if used properly, improve speed performance, reduce data transfer between memory and processors, and use less energy, while retaining the target accuracy. These benefits are most important with large datasets or real-time applications. 
-However, one never realizes how much reduced precision is needed in their applications or certain computational steps, unless via rigorous error analysis, a program precision tuning tool, or trial and error. 
+Lower-precision floating-point arithmetic is increasingly used in modern hardware, moving beyond the usual IEEE 64-bit double-precision and 32-bit single-precision formats. Hardware accelerators and software emulators commonly support reduced-precision formats such as IEEE FP16 and bfloat16, which are widely used in scientific computing and deep learning applications. On suitable hardware, these formats can improve computational throughput, reduce memory traffic, and lower energy consumption while retaining the target accuracy. These benefits are particularly important for large datasets and real-time applications. 
+Determining how much precision an application or a particular computational step requires generally needs rigorous error analysis, a precision-tuning tool, or empirical testing. 
 
-Inspired by MATLAB’s well-known chop function by Nick Higham, to support both practical and theoretical floating point analysis, ``Pychop`` features the efficient low-precision emulation for Python, with an easy extension to MATLAB, without relying on hardware. This library lets you quickly and reliably convert single- or double-precision numbers into any low-bitwidth format. It is flexible, so you can set up custom floating-point formats by choosing the number of exponent and significand bits, or pick fixed-point or integer quantization. This gives you control to match numerical precision and range to your algorithm, simulation, or hardware needs. It combines advanced features with ease of use. It includes many rounding modes, both deterministic and stochastic, and can handle denormal numbers as soft errors for accurate hardware emulation. The library is built for speed using vectorized operations for emulation. It also integrates directly with NumPy arrays, PyTorch tensors, and JAX arrays, so you can quantize data within your current workflow without extra conversions or performance loss.
+Inspired by MATLAB’s well-known chop function by Nick Higham, ``Pychop`` provides efficient low-precision emulation in Python for both practical and theoretical floating-point analysis, without requiring native low-precision hardware. It can also be called from MATLAB. The library lets you quantize single- or double-precision values to a range of standard and customizable low-bit-width formats. You can configure custom floating-point formats by choosing the number of exponent and significand bits, or use fixed-point or integer quantization. This gives you control to match numerical precision and range to your algorithm, simulation, or hardware needs. It supports multiple deterministic and stochastic rounding modes, subnormal (denormal) numbers, and soft-error simulation. The library uses vectorized operations for efficient emulation and integrates with NumPy arrays, PyTorch tensors, and JAX arrays using their native array/tensor types.
 
-``Pychop`` enables one to emulate low-precision arithmetic in a regular high-precision environment, so you do not need special hardware. This makes it easy to study how quantization affects stability, convergence, accuracy, and efficiency on your laptop or server. ``Pychop``works well for academic research needing careful control over numbers, and for software development where you want to quickly test different bit-widths to find the best balance between speed, memory use, and model quality. ``Pychop``offers a comprehensive solution.
+``Pychop`` enables low-precision arithmetic to be emulated in a regular high-precision environment, so special low-precision hardware is not required. This makes it easy to study how quantization affects stability, convergence, and accuracy on a laptop or server. ``Pychop`` works well for academic research requiring careful control over numerical formats and for software development where different bit-widths need to be tested before deployment. The emulator reproduces low-precision numerical behavior; it does not by itself provide the physical storage, memory-bandwidth, or compute-throughput savings of a packed low-precision hardware implementation.
 
 
 
 ## Install
 
-The proper running environment of ``Pychop``  should by Python 3, which relies on the following dependencies: python > 3.8, numpy >=1.7.3, pandas >=2.0, torch, jax. 
+``Pychop`` requires Python >= 3.8. Core dependencies include NumPy >= 1.17.3, pandas, SciPy >= 1.0, scikit-learn >= 0.20, and ``dask[array]``. PyTorch, JAX, and TensorFlow are optional backends and can be installed separately when needed. 
 
-To install the current current release via PIP manager use:
+To install the current release with pip, use:
 
 ```Python
 pip install pychop
 ```
 
-Besides, one can install `pychop` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
+Alternatively, to install `pychop` from the `conda-forge` channel, first add `conda-forge` to your channels with:
 
 ```
 conda config --add channels conda-forge
@@ -63,7 +63,7 @@ mamba search pychop --channel conda-forge
 ```
 
 ## Features
-The ``Pychop`` class offers several key advantages that make it a powerful tool for developers, researchers, and engineers working with numerical computations:
+The ``Pychop`` library offers several key features for developers, researchers, and engineers working with numerical computations:
 
 * Customizable Precision
 * Multiple Rounding Modes
@@ -92,7 +92,7 @@ The supported floating point arithmetic formats include:
 
 
 
-``Pychop`` support arbitrarily built-in reduced-precision types for scalar, array, and tensor. See here for detail [doc](https://pychop.readthedocs.io/en/latest/builtin.html). A simple example for scalar is as follows:
+``Pychop`` supports built-in and customizable reduced-precision types for scalars, arrays, and tensors. See the [documentation](https://pychop.readthedocs.io/en/latest/builtin.html) for details. A simple scalar example is as follows:
 
 ```python
 from pychop import Chop
@@ -116,24 +116,25 @@ print(e)                     # CPFloat(4.37438, prec=half)
 
 ### Supported Microscaling (MX) formats
 
-[Microscaling formats](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf) use **block-level shared exponents** for extreme compression (2-4x vs FP16).
+[Microscaling formats](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf) use a **block-level shared scale** together with low-bit-width element formats. For the OCP-defined formats below, 32 elements share one E8M0 scale. When physically encoded and packed, this representation can reduce storage relative to FP16; PyChop itself emulates the numerical behavior rather than storing tensors in a packed MX representation.
 
 | format | description | element bits | block structure |
 | ------------- | ------------- | ------------- | ------------- |
-| 'mxfp8_e5m2'  | OCP MX FP8 E5M2 | 8 (5 exp + 2 sig) | 32 elements + E8M0 scale |
-| 'mxfp8_e4m3'  | OCP MX FP8 E4M3 | 8 (4 exp + 3 sig) | 32 elements + E8M0 scale |
-| 'mxfp6_e3m2'  | OCP MX FP6 E3M2 | 6 (3 exp + 2 sig) | 32 elements + E8M0 scale |
-| 'mxfp6_e2m3'  | OCP MX FP6 E2M3 | 6 (2 exp + 3 sig) | 32 elements + E8M0 scale |
-| 'mxfp4_e2m1'  | OCP MX FP4 E2M1 | 4 (2 exp + 1 sig) | 32 elements + E8M0 scale |
-| custom MX     | user-defined    | any E/M combinati
+| 'mxfp8_e5m2'  | OCP MX FP8 E5M2 | 8 (1 sign + 5 exp + 2 sig) | 32 elements + E8M0 scale |
+| 'mxfp8_e4m3'  | OCP MX FP8 E4M3 | 8 (1 sign + 4 exp + 3 sig) | 32 elements + E8M0 scale |
+| 'mxfp6_e3m2'  | OCP MX FP6 E3M2 | 6 (1 sign + 3 exp + 2 sig) | 32 elements + E8M0 scale |
+| 'mxfp6_e2m3'  | OCP MX FP6 E2M3 | 6 (1 sign + 2 exp + 3 sig) | 32 elements + E8M0 scale |
+| 'mxfp4_e2m1'  | OCP MX FP4 E2M1 | 4 (1 sign + 2 exp + 1 sig) | 32 elements + E8M0 scale |
+| 'mxint8'       | OCP MX INT8 | 8 (two's-complement integer) | 32 elements + E8M0 scale |
+| custom MX     | user-defined MX-style emulation | 1 + E + M | configurable block and scale widths |
 
 
 **Key Features of MX Formats:**
-- 🚀 **2-4x compression** vs FP16 while maintaining accuracy
-- 🎯 **Block-level shared scale factor** (typically 32 elements per block)
-- 🔧 **Fully customizable**: any `(exp_bits, sig_bits)` combination supported
-- 📦 **Flexible block sizes**: 8, 16, 32, 64, 128, or custom
-- ⚙️ **Adjustable scale precision**: E6M0, E8M0, E10M0, or custom
+- 🚀 **Theoretical packed-size reduction vs FP16**: approximately 1.94x for MXFP8, 2.56x for MXFP6, and 3.76x for MXFP4 for full 32-element blocks with one 8-bit scale
+- 🎯 **Block-level shared scale factor**: OCP-defined formats use 32 elements per block with an E8M0 scale
+- 🔧 **Custom MX-style emulation**: user-defined `(exp_bits, sig_bits)` combinations are supported, but such combinations are not necessarily OCP-standard formats
+- 📦 **Configurable block size** for custom emulation; use 32 for the OCP-defined formats above
+- ⚙️ **Configurable scale exponent width** via `scale_exp_bits`; OCP-defined formats use E8M0
 
 
 ```python
@@ -142,27 +143,28 @@ from pychop.mx_formats import MXTensor, mx_quantize
 # Predefined MX format
 X_mx = mx_quantize(X, format='mxfp8_e4m3', block_size=32)
 
-# Custom MX format (E5M4 elements)
+# Custom MX-style format (E5M4 elements; non-standard)
 mx_tensor = MXTensor(X, format=(5, 4), block_size=64)
 
-# Custom with larger scale range
+# Custom format with a larger shared-scale exponent range (non-standard)
 mx_tensor = MXTensor(X, format=(4, 3), scale_exp_bits=10, block_size=32)
 
-# Ultra-low precision (3-bit elements!)
+# Ultra-low-precision custom format: 3-bit elements (non-standard)
 mx_tensor = MXTensor(X, format=(1, 1), block_size=16)
 ```
 
+`mx_quantize` returns quantized-dequantized values in the same backend family as the input. `MXTensor.statistics()` reports format-level encoded-size/compression estimates; these are not measurements of the in-memory size of the emulation tensor.
 
 ### Examples
 We will go through the main functionality of ``Pychop``; for details refer to the documentation. 
 
 #### (I). Floating point quantization
 Users can specify the number of exponent (exp_bits) and significand (sig_bits) bits, enabling precise control over the trade-off between range and precision. 
-For example, setting exp_bits=5 and sig_bits=4 creates a compact 10-bit format (1 sign, 5 exponent, 4 significand), ideal for testing minimal precision scenarios.
+For example, setting exp_bits=5 and sig_bits=4 emulates a 10-bit format (1 sign, 5 exponent, 4 significand), which is useful for testing minimal-precision scenarios.
 
 Rounding the values with specified precision format:
 
-``Pychop`` supports faster low-precision floating point quantization and also enables GPU emulation (simply move the input to GPU device), with different rounding functions:
+``Pychop`` supports efficient low-precision floating-point quantization with multiple rounding modes and can use GPU-backed PyTorch or JAX arrays/tensors for emulation:
 
 ```Python
 import pychop
@@ -182,14 +184,14 @@ X_q = ch(X)
 print(X_q[:10, 0])
 ```
 
-If one is not seeking optimized performance and more emulation supports, one can use the following example. 
+For a more feature-complete research interface, including soft-error simulation, use ``FaultChop``. 
 
-``Pychop`` also provides same functionalities just like Higham's chop [1] that supports soft error simulation (by setting ``flip=True``), but with relatively degraded speed:
+``FaultChop`` follows the style of Higham's chop [1] and supports soft-error simulation by setting ``flip=True``; this interface may be slower than the optimized quantization path:
 
 ```Python
 from pychop import FaultChop
 
-ch = FaultChop('h') # Standard IEEE 754 half precision
+ch = FaultChop('h', flip=True) # IEEE 754 half precision with soft-error simulation enabled
 X_q = ch(X) # Rounding values
 ```
 
@@ -199,7 +201,7 @@ from pychop import Customs
 from pychop import FaultChop
 
 pychop.backend('numpy', 1)
-ct1 = Customs(exp_bits=5, sig_bits=10) # half precision (5 exponent bits, 10+(1) significand bits, (1) is implicit bits)
+ct1 = Customs(exp_bits=5, sig_bits=10) # half precision: 5 exponent bits and 10 stored significand bits (plus the implicit leading bit)
 
 ch = FaultChop(customs=ct1, rmode=3) # Round towards minus infinity 
 X_q = ch(X)
@@ -212,7 +214,7 @@ print(X_q[:10, 0])
 ```
 
 
-To enable quantization aware training, a sequential neural network can be built with derived quantied layer (seamlessly integrated with Straight-Through Estimator):
+To enable quantization-aware training, a sequential neural network can be built with quantized layers that integrate a Straight-Through Estimator (STE):
 
 ```Python
 import torch.nn as nn
@@ -226,7 +228,6 @@ class MLP(nn.Module):
         self.relu1 = nn.ReLU()
         self.dropout = nn.Dropout(0.2)
         self.fc2 = QuantizedLinear(256, 10, chop=chop)
-        # 5 exponent bits, 10 explicit significant bits , round to nearest ties to even
 
     def forward(self, x):
         x = self.flatten(x)
@@ -237,7 +238,7 @@ class MLP(nn.Module):
         return x
 ```
 
-To enable quantization-aware training, one need to pass floating-point chopper ``ChopSTE`` or fixed-point chopper ``ChopfSTE`` to the parameter ``chop``, for details of example. we refer to [example_CNN_ft.py](examples/example_CNN_ft.py) and [example_CNN_fp.py](examples/example_CNN_fp.py)
+To enable quantization-aware training, pass the floating-point chopper ``ChopSTE`` or fixed-point chopper ``ChopfSTE`` to the ``chop`` parameter. For examples, see [example_CNN_ft.py](examples/example_CNN_ft.py) and [example_CNN_fp.py](examples/example_CNN_fp.py).
 
 
 For integer quantization, please see [example_CNN_int.py](examples/example_CNN_int.py).
@@ -255,13 +256,13 @@ X_q = ch(X)
 ```
 
 
-The code example can be found on the [guidance1](https://github.com/chenxinye/pychop/example/guidance1.ipynb) and [guidance2](https://github.com/chenxinye/pychop/example/guidance2.ipynb).
+See the [fixed-point documentation](docs/source/fix_point.rst) for additional details.
 
 #### (III). Integer quantization
 
-Integer quantization is another important feature of pychop. It intention is to convert the floating point number into a low bit-width integer, which speeds up the computations in certain computing hardware. It performs quantization with user-defined bitwidths. The following example illustrates the usage of the method.
+Integer quantization is another important feature of ``Pychop``. Its purpose is to quantize floating-point values to low-bit-width integers, which can enable faster computation on hardware with suitable integer support. It supports user-defined bit-widths. The following example illustrates its use.
 
-The integer arithmetic emulation of ``Pychop`` is implemented by the interface Chopi. It can be used in many circumstances, and offers flexible options for users, such as symmetric or unsymmetric quantization and the number of bits to use. The usage is illustrated as below:
+Integer quantization in ``Pychop`` is provided by the ``Chopi`` interface. It supports options such as symmetric or asymmetric quantization and a user-defined bit-width. Its usage is illustrated below:
 
 
 ```Python
@@ -276,7 +277,7 @@ X_dq = ch.dequantize(X_q) # Convert back to floating points
 ```
 
 
-### Call in MATlAB
+### Call in MATLAB
 
 If you use Python virtual environments in MATLAB, ensure MATLAB detects it:
 
@@ -284,7 +285,7 @@ If you use Python virtual environments in MATLAB, ensure MATLAB detects it:
 pe = pyenv('Version', 'your_env\python.exe'); % or simply pe = pyenv();
 ```
 
-To use ``Pychop`` in your MATLAB environment, similarly, simply load the ``Pychop``module:
+To use ``Pychop`` from MATLAB, import the ``pychop`` Python module:
 
 ```MATLAB
 pc = py.importlib.import_module('pychop');
@@ -318,7 +319,7 @@ X_q = ch(X);
 
 
 ## Contributing
-Our software is licensed under License MIT. We welcome contributions in any form! Assistance with documentation is always welcome. To contribute, feel free to open an issue or please fork the project make your changes and submit a pull request. We will do our best to work through any issues and requests.
+Our software is licensed under the MIT License. We welcome contributions in any form! Assistance with documentation is always welcome. To contribute, feel free to open an issue or fork the project, make your changes, and submit a pull request. We will do our best to work through any issues and requests.
 
 
 ## Acknowledgement
